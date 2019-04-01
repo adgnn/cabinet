@@ -1,61 +1,31 @@
 <template>
-    <div class="addUser">
+    <div class="checkDevice">
         <div class="search">
             <div class="search_title_box">
                 <span class="square"></span>
-                <span class="search_title">查询存取记录</span>
+                <span class="search_title">设备列表查询</span>
             </div>
             <div class="search_box">
                 <el-form :model="inquireForm" ref="inquireForm" :inline="true">
-                    <el-form-item label="时间查询">
-                        <el-select v-model="inquireForm.time" placeholder="请选择">
-                            <el-option
-                                    v-for="item in inquireForm.times"
-                                    :key="item.value"
-                                    :label="item.label"
-                                    :value="item.value"
-                            ></el-option>
-                        </el-select>
+                    <el-form-item label="设备编码">
+                        <el-input v-model="inquireForm.equipmentCode" placeholder="请输入"></el-input>
                     </el-form-item>
-                    <el-form-item label="物品查询">
-                        <el-select v-model="inquireForm.thing" placeholder="请选择">
-                            <el-option
-                                    v-for="item in inquireForm.things"
-                                    :key="item.value"
-                                    :label="item.label"
-                                    :value="item.value"
-                            ></el-option>
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item label="状态查询">
-                        <el-select v-model="inquireForm.status" placeholder="请选择">
-                            <el-option
-                                    v-for="item in inquireForm.statuses"
-                                    :key="item.value"
-                                    :label="item.label"
-                                    :value="item.value"
-                            ></el-option>
-                        </el-select>
+                    <el-form-item label="公司编码">
+                        <el-input v-model="inquireForm.companyCode" placeholder="请输入"></el-input>
                     </el-form-item>
                     <el-form-item>
                         <el-button class="search_button" @click="inquire">查询</el-button>
-                        <el-button @click="reset('inquireForm')">全部</el-button>
+                        <el-button @click="getAll">全部</el-button>
                     </el-form-item>
                 </el-form>
             </div>
         </div>
         <div class="table">
             <el-table :data="tableData" border>
-                <el-table-column label="编码" align="center" prop=""></el-table-column>
-                <el-table-column label="名称" align="center" prop=""></el-table-column>
-                <el-table-column label="电话" align="center" prop=""></el-table-column>
-                <el-table-column label="创建时间" align="center" prop=""></el-table-column>
-                <el-table-column label="操作" align="center" fixed="right">
-                    <template slot-scope="scope">
-                        <el-button @click="editor(scope.row)" type="text" size="small">编辑</el-button>
-                        <el-button @click="delete(scope.row)" type="text" size="small">删除</el-button>
-                    </template>
-                </el-table-column>
+                <el-table-column label="设备编码" align="center" prop="equId"></el-table-column>
+                <el-table-column label="公司编码" align="center" prop="company.comId"></el-table-column>
+                <el-table-column label="公司名称" align="center" prop="company.comName"></el-table-column>
+                <el-table-column label="售出时间" align="center" prop=""></el-table-column>
             </el-table>
             <div style="text-align: center;margin-top: 20px">
                 <el-pagination
@@ -72,12 +42,76 @@
 
 <script>
     export default {
-        name: "checkDevice"
+        name: "checkDevice",
+        data() {
+            return {
+                inquireForm: {
+                    equipmentCode: '', //设备编号
+                    companyCode: '', //公司编号
+                },
+                tableData: [],
+                page: {
+                    //分页
+                    pageSize: 8, //每页显示的信息数目
+                    total: 0, //总共的信息数目
+                    currentPage: 1 //当前页数
+                },
+            }
+        },
+        methods: {
+            handleCurrentChange() {
+                //分页
+                this.getData(this.page.currentPage, this.page.pageSize);
+            },
+            getData(page, pageSize) {
+                //获取设备列表
+                let search = {};
+                if (this.inquireForm.equipmentCode) {
+                    search.empId = this.inquireForm.equipmentCode;
+                }
+                if (this.inquireForm.companyCode) {
+                    search.comId = this.inquireForm.companyCode;
+                }
+                this.$post('/equ/info', {
+                    "search": search,
+                    "pageStr": {
+                        "page": page,
+                        "size": pageSize
+                    }
+                })
+                    .then((res) => {
+                        if (res.data.code === 0) {
+                            this.tableData = res.data.content.content;
+                            this.page.total = res.data.content.totalElements;
+                        } else {
+                            this.$fail(res.data.message);
+                        }
+                    })
+                    .catch((err) => {
+                        this.$fail("获取用户信息失败")
+                    })
+            },
+            inquire() {
+                //查询
+                this.page.currentPage = 1;
+                this.page.pageSize = 8;
+                this.getData(this.page.currentPage, this.page.pageSize);
+            },
+            getAll() {
+                //获取所有的信息
+                this.inquireForm.equipmentCode = '';
+                this.inquireForm.companyCode = '';
+                this.getData(this.page.currentPage, this.page.pageSize);
+            },
+        },
+        mounted() {
+            // this.getData(this.page.currentPage, this.page.pageSize);
+        }
     }
 </script>
 
 <style scoped>
-    .accessLogs {
+    .checkDevice {
         border: 1px solid #F8F8F8;
         box-sizing: border-box;
         height: 100%;
@@ -85,9 +119,9 @@
 
     .search {
         width: 90%;
-        margin-left: 5%;
-        margin-top: 30px;
-        height: 170px;
+        margin: 30px 0 0 5%;
+        box-sizing: border-box;
+        padding-bottom: 30px;
         background-color: white;
     }
 

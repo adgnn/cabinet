@@ -54,21 +54,112 @@
                 tableData: [],
                 page: {
                     //分页
-                    pageSize: 10, //每页显示的信息数目
+                    pageSize: 8, //每页显示的信息数目
                     total: 0, //总共的信息数目
                     currentPage: 1 //当前页数
                 },
             }
         },
         methods: {
-            reset(formName) {
-                //重置查询的类型或者时间
-                this.$refs[formName].resetFields();
+            handleCurrentChange() {
+                //分页
+                this.getData(this.page.currentPage, this.page.pageSize);
             },
-            editor(row) {
+            getData(page, pageSize) {
+                //获取成员信息
+                let search = {};
+                if (this.inquireForm.code) {
+                    search.empId = this.inquireForm.code;
+                }
+                if (this.inquireForm.status) {
+                    search.status = this.inquireForm.status;
+                }
+                if (this.inquireForm.phone) {
+                    search.phone = this.inquireForm.phone;
+                }
+                this.$post('/emp/info', {
+                    "search": search,
+                    "pageStr": {
+                        "page": page,
+                        "size": pageSize
+                    }
+                })
+                    .then((res) => {
+                        if (res.data.code === 0) {
+                            this.tableData = res.data.content.content;
+                            this.page.total = res.data.content.totalElements;
+                        } else {
+                            this.$fail(res.data.message);
+                        }
+                    })
+                    .catch((err) => {
+                        this.$fail("获取用户信息失败")
+                    })
             },
-            delete(row) {
+            inquire() {
+                //查询
+                this.page.currentPage = 1;
+                this.page.pageSize = 8;
+                this.getData(this.page.currentPage, this.page.pageSize);
             },
+            getAll() {
+                //获取所有的信息
+                this.inquireForm.code = '';
+                this.inquireForm.status = null;
+                this.inquireForm.phone = '';
+                this.getData(this.page.currentPage, this.page.pageSize);
+            },
+
+            edit(row) {
+                this.editData = row;
+                this.show_edit = true;
+            },
+            edit_sure(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        this.editData.empName = this.edit.name;
+                        this.editData.phone = this.edit.phone;
+                        this.$post('/emp/setInfo', this.editData)
+                            .then((res) => {
+                                this.$success("编辑成员信息成功")
+                            })
+                            .catch((err) => {
+                                this.$fail('编辑成员信息失败')
+                            })
+                    }
+                });
+            },
+            edit_close() {
+                this.editData = {};
+                this.edit = {
+                    name: '',
+                    phone: '',
+                };
+                this.show_edit = false;
+            },
+
+            del(row) {
+                this.del_id = row.empId;
+                this.show_del = true;
+            },
+            del_sure() {
+                //确认删除某个成员信息
+                this.$get(`emp/delEmp/${this.del_id}`)
+                    .then((res) => {
+                        this.$success("删除成功")
+                    })
+                    .catch((err) => {
+                        this.$fail("删除失败")
+                    })
+            },
+            del_close() {
+                this.del_id = null;
+                this.show_del = false;
+            }
+
+        },
+        mounted() {
+            // this.getData(this.page.currentPage, this.page.pageSize);
         }
     }
 </script>
@@ -82,9 +173,9 @@
 
     .search {
         width: 90%;
-        margin:30px 0 0 5%;
+        margin: 30px 0 0 5%;
         box-sizing: border-box;
-        padding-bottom:30px;
+        padding-bottom: 30px;
         background-color: white;
     }
 

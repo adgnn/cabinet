@@ -4,27 +4,16 @@
             <span class="square"></span>
             <span class="title">新增客户</span>
         </div>
-        <!--<el-form :model="form" :rules="rules" ref="form" label-position="right" label-width="100px"-->
-        <!--style="width:500px; margin: 50px auto">-->
-        <!--<el-form-item label="公司名称：" prop="name" style="margin-top:20px;">-->
         <div class="label">公司名称：</div>
         <el-input v-model="form.name" class="input" placeholder="请输入公司名称"></el-input>
         <div class="label">联系方式：</div>
         <el-input v-model="form.phone" class="input" placeholder="请输入联系方式"></el-input>
         <div class="label">公司地址：</div>
         <el-input v-model="form.address" class="input" placeholder="请输入公司地址"></el-input>
-        <!--</el-form-item>-->
-        <!--<el-form-item label="联系方式：" prop="phone">-->
-        <!--<el-input v-model="form.phone"></el-input>-->
-        <!--</el-form-item>-->
-        <!--<el-form-item label="公司地址：" prop="address">-->
-        <!--<el-input v-model="form.address"></el-input>-->
-        <!--</el-form-item>-->
-        <!--</el-form>-->
-
-        <div class="submit" @click="submit">提交</div>
-        <div class="reset" @click="submit">重置</div>
-
+        <div class="button_box">
+            <div class="submit" @click="submit">提交</div>
+            <div class="reset" @click="reset">重置</div>
+        </div>
     </div>
 </template>
 
@@ -32,21 +21,49 @@
     export default {
         name: "addUser",
         data() {
-
             return {
                 form: {
                     name: '',
                     phone: '',
                     address: '',
                 },
-                rules: {
-                    name: [{required: true, message: '请输入真实姓名', trigger: 'blur'}],
-                    phone: [{required: true, message: '请输入电话', trigger: 'blur'}],
-                    address: [{required: true, message: '请输入身份证', trigger: 'blur'}],
-
-                }
             }
-        }
+        },
+        methods: {
+            reset() {
+                this.form = {
+                    name: '',
+                    phone: '',
+                    address: '',
+                };
+            },
+            submit() {
+                if (this.form.name === '') {
+                    this.$message("请填写公司名称");
+                    return
+                }
+                if (this.form.phone === '') {
+                    this.$message("请填写联系方式");
+                    return
+                }
+                if (this.form.address === '') {
+                    this.$message("请填写公司地址");
+                    return
+                }
+                this.$post('/sys/ic', {
+                    "company": this.form.name,
+                    "address": this.form.address,
+                    "phone": this.form.phone,
+                })
+                    .then((res) => {
+                        this.$success("新增成功");
+                        this.reset();
+                    })
+                    .catch((err) => {
+                        this.$fail("新增失败");
+                    })
+            }
+        },
     }
 </script>
 
@@ -96,8 +113,8 @@
         margin: 20px auto;
     }
 
-    .submit {
-        margin: 60px auto 0;
+    .submit, .reset {
+        float: left;
         height: 41px;
         cursor: pointer;
         line-height: 41px;
@@ -105,7 +122,23 @@
         box-sizing: border-box;
         text-align: center;
         letter-spacing: 2px;
-        color: white;
+    }
+
+    .submit {
         background-color: #5455B0;
+        color: white;
+    }
+
+    .reset {
+        border: 1px solid #707070;
+        color: #707070;
+        background-color: white;
+        margin-left: 30px;
+    }
+
+    .button_box {
+        height: 41px;
+        width: 230px;
+        margin: 50px auto;
     }
 </style>

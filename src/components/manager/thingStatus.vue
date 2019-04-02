@@ -1,5 +1,26 @@
 <template>
     <div class="thingStatus">
+        <!--转借物品弹出框-->
+        <el-dialog title="转借物品" :visible.sync="show_edit" width="40%" :before-close="edit_close">
+            <el-form :model="borrow" ref="inquireForm" :inline="true">
+                <el-form-item label="成员编号或者姓名">
+                    <el-input v-model="borrow.id" placeholder="请输入"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button class="search_button" @click="borrow_search">搜索用户</el-button>
+                </el-form-item>
+                <el-form-item label="请选择成员:">
+                    <el-button v-for="item in users" class="search_s" :key="item.empId"
+                               @click="click_searchUser(item.empId)">
+                        {{item.empName}}
+                    </el-button>
+                </el-form-item>
+                <div class="dialog-footer" style="text-align: right">
+                    <el-button @click="edit_sure('edit')">确认转借</el-button>
+                </div>
+            </el-form>
+        </el-dialog>
+
         <div class="search">
             <div class="search_title_box">
                 <span class="square"></span>
@@ -62,6 +83,17 @@
                     total: 0, //总共的信息数目
                     currentPage: 1 //当前页数
                 },
+
+                borrow: {
+                    id: ''//转借搜索成员编码或者姓名
+                },
+                users: [],//转借弹出框的搜索成员列表
+
+                show_edit: true,
+                edit: {
+                    goodsId: '',
+                    empId: '',
+                },
             }
         },
         methods: {
@@ -111,9 +143,47 @@
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
 
-            borrow(row) {
+            edit(row) {
+                this.edit.goodsId = row.goodsId;
+                this.show_edit = true;
+            },
+            edit_sure() {
+                this.$get(`equ/ul/${this.edit.goodsId}/${this.edit.empId}`)
+                    .then((res) => {
+                        this.edit_close();
+                        this.$success("物品转借成功")
+                    })
+                    .catch((err) => {
+                        this.$fail('物品转借失败')
+                    })
 
             },
+            edit_close() {
+                this.edit = {
+                    goodsId: '',
+                    empId: '',
+                };
+                this.show_edit = false;
+            },
+            borrow_search(row) {
+                if (!this.borrow.id) {
+                    this.$message("请输入要搜索的成员编号或者姓名");
+                    return
+                }
+                this.$post('/emp/searchInfo', {
+                    "search": this.borrow.id
+                })
+                    .then((res) => {
+                        this.users = res.data.content;
+                        document.getElementsByClassName("search_s")[0].click();
+                    })
+                    .catch((err) => {
+                        this.$fail("搜索失败")
+                    })
+            },
+            click_searchUser(id) {
+                this.edit.empId = id;
+            }
         },
         watch: {
             tableData: function () {

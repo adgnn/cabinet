@@ -1,5 +1,19 @@
 <template>
     <div class="checkUser">
+        <!--编辑弹出框-->
+        <el-dialog title="关联设备" :visible.sync="show_edit" width="40%" :before-close="edit_close">
+            <el-form :model="edit" ref="edit" :rules="rules" label-position="right" label-width="100px"
+                     style="margin: 0 auto;">
+                <el-form-item label="设备编号：" prop="equId">
+                    <el-input v-model="edit.equId"></el-input>
+                </el-form-item>
+            </el-form>
+            <div class="dialog-footer" style="text-align: right">
+                <el-button @click="edit_close">取 消</el-button>
+                <el-button type="primary" @click="edit_sure('edit')">确 定</el-button>
+            </div>
+        </el-dialog>
+
         <div class="search">
             <div class="search_title_box">
                 <span class="square"></span>
@@ -15,19 +29,24 @@
                     </el-form-item>
                     <el-form-item>
                         <el-button class="search_button" @click="inquire">查询</el-button>
-                        <el-button @click="reset('inquireForm')">全部</el-button>
+                        <el-button @click="getAll">全部</el-button>
                     </el-form-item>
                 </el-form>
             </div>
         </div>
         <div class="table">
             <el-table :data="tableData" border>
-                <el-table-column label="公司编码" align="center" prop=""></el-table-column>
-                <el-table-column label="公司名称" align="center" prop=""></el-table-column>
-                <el-table-column label="联系方式" align="center" prop=""></el-table-column>
-                <el-table-column label="公司地址" align="center" prop=""></el-table-column>
-                <el-table-column label="创建日期" align="center" prop=""></el-table-column>
-                <el-table-column label="设备编号" align="center" prop=""></el-table-column>
+                <el-table-column label="公司编码" align="center" prop="comId"></el-table-column>
+                <el-table-column label="公司名称" align="center" prop="comName"></el-table-column>
+                <el-table-column label="联系方式" align="center" prop="comAdminPhone"></el-table-column>
+                <el-table-column label="公司地址" align="center" prop="comAddress"></el-table-column>
+                <el-table-column label="创建日期" align="center" prop="createTime"></el-table-column>
+                <el-table-column label="操作" align="center" fixed="right">
+                    <template slot-scope="scope">
+                        <el-button @click="edit(scope.row)" type="text" size="small">关联设备</el-button>
+                        <!--<el-button @click="del(scope.row)" type="text" size="small">删除</el-button>-->
+                    </template>
+                </el-table-column>
             </el-table>
             <div style="text-align: center;margin-top: 20px">
                 <el-pagination
@@ -49,7 +68,7 @@
             return {
                 inquireForm: {
                     code: '', //公司编号
-                    name: '', //公司名称
+                    name: '',//公司名称
                 },
                 tableData: [],
                 page: {
@@ -58,6 +77,16 @@
                     total: 0, //总共的信息数目
                     currentPage: 1 //当前页数
                 },
+                show_edit: true,
+
+                edit: {
+                    equId: '',//关联的设备的id
+                    comId: '',//公司id
+                },
+
+                rules: {//修改信息验证规则
+                    equId: [{required: true, message: '请输入设备编号', trigger: 'blur'}],
+                }
             }
         },
         methods: {
@@ -66,18 +95,15 @@
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
             getData(page, pageSize) {
-                //获取成员信息
+                //获取公司信息
                 let search = {};
                 if (this.inquireForm.code) {
-                    search.empId = this.inquireForm.code;
+                    search.comId = this.inquireForm.code;
                 }
-                if (this.inquireForm.status) {
-                    search.status = this.inquireForm.status;
+                if (this.inquireForm.name) {
+                    search.comName = this.inquireForm.name;
                 }
-                if (this.inquireForm.phone) {
-                    search.phone = this.inquireForm.phone;
-                }
-                this.$post('/emp/info', {
+                this.$post('/sys/getC', {
                     "search": search,
                     "pageStr": {
                         "page": page,
@@ -105,57 +131,35 @@
             getAll() {
                 //获取所有的信息
                 this.inquireForm.code = '';
-                this.inquireForm.status = null;
-                this.inquireForm.phone = '';
+                this.inquireForm.name = '';
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
 
             edit(row) {
-                this.editData = row;
+                this.edit.comId = row.comId;
                 this.show_edit = true;
             },
             edit_sure(formName) {
                 this.$refs[formName].validate((valid) => {
                     if (valid) {
-                        this.editData.empName = this.edit.name;
-                        this.editData.phone = this.edit.phone;
-                        this.$post('/emp/setInfo', this.editData)
+                        this.$get(`sys/rec/${this.edit.equId}/${this.edit.comId}`)
                             .then((res) => {
-                                this.$success("编辑成员信息成功")
+                                this.$success("关联设备成功")
                             })
                             .catch((err) => {
-                                this.$fail('编辑成员信息失败')
+                                this.$fail('关联设备失败')
                             })
                     }
                 });
             },
             edit_close() {
-                this.editData = {};
                 this.edit = {
-                    name: '',
-                    phone: '',
+                    equId: '',//关联的设备的id
+                    comId: '',//公司id
                 };
                 this.show_edit = false;
             },
 
-            del(row) {
-                this.del_id = row.empId;
-                this.show_del = true;
-            },
-            del_sure() {
-                //确认删除某个成员信息
-                this.$get(`emp/delEmp/${this.del_id}`)
-                    .then((res) => {
-                        this.$success("删除成功")
-                    })
-                    .catch((err) => {
-                        this.$fail("删除失败")
-                    })
-            },
-            del_close() {
-                this.del_id = null;
-                this.show_del = false;
-            }
 
         },
         mounted() {
@@ -173,9 +177,10 @@
 
     .search {
         width: 90%;
-        margin: 30px 0 0 5%;
-        box-sizing: border-box;
+        margin-left: 5%;
+        margin-top: 30px;
         padding-bottom: 30px;
+        box-sizing: border-box;
         background-color: white;
     }
 

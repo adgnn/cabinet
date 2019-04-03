@@ -49,12 +49,6 @@
                 <el-table-column label="物品名称" align="center" prop="goods.goodsName"></el-table-column>
                 <el-table-column label="借出时间" align="center" prop="outTime"></el-table-column>
                 <el-table-column label="归还时间" align="center" prop="inTime"></el-table-column>
-                <el-table-column label="操作" align="center" fixed="right">
-                    <template slot-scope="scope">
-                        <el-button @click="editor(scope.row)" type="text" size="small">编辑</el-button>
-                        <el-button @click="delete(scope.row)" type="text" size="small">删除</el-button>
-                    </template>
-                </el-table-column>
             </el-table>
             <div style="text-align: center;margin-top: 20px">
                 <el-pagination
@@ -76,9 +70,9 @@
             return {
                 inquireForm: {
                     code: '',
-                    time: null,
+                    time: '',
                     thing: '',
-                    status: null,
+                    status: '',
                     times: [
                         {
                             value: 0,
@@ -119,22 +113,23 @@
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
             getData(page, pageSize) {
-                //获取成员信息
+                //获取存取记录
+                console.log(this.inquireForm.time);
                 let search = {};
                 if (this.inquireForm.code) {
                     search.comEmpId = this.inquireForm.code;
                 }
-                if (this.inquireForm.status) {
+                if (this.inquireForm.time !== '') {
                     search.startTime = this.inquireForm.time;
                 }
-                if (this.inquireForm.phone) {
+                if (this.inquireForm.status !== '') {
                     search.status = this.inquireForm.status;
                 }
                 if (this.inquireForm.thing) {
                     search.goodsName = this.inquireForm.thing;
                 }
-                this.$post('/emp/log', {
-                    "search": search,
+                this.$post('/equ/log', {
+                    "search": JSON.stringify(search),
                     "pageStr": {
                         "page": page,
                         "size": pageSize
@@ -142,8 +137,8 @@
                 })
                     .then((res) => {
                         if (res.data.code === 0) {
-                            this.tableData = res.data.content.content;
-                            this.page.total = res.data.content.totalElements;
+                            this.tableData = res.data.content.content.content;
+                            this.page.total = res.data.content.content.totalElements;
                         } else {
                             this.$fail(res.data.message);
                         }
@@ -161,8 +156,8 @@
             getAll() {
                 //获取所有的信息
                 this.inquireForm.code = '';
-                this.inquireForm.status = null;
-                this.inquireForm.time = null;
+                this.inquireForm.status = '';
+                this.inquireForm.time = '';
                 this.inquireForm.thing = '';
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
@@ -185,7 +180,11 @@
                     "search": search,
                 })
                     .then((res) => {
-                        this.$success("导出excel成功")
+                        if (res.data.code === 0) {
+                            this.$success("导出excel成功")
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail("导出excel失败")
@@ -193,7 +192,7 @@
             },
         },
         mounted() {
-            // this.getData(this.page.currentPage, this.page.pageSize);
+            this.getData(this.page.currentPage, this.page.pageSize);
         }
     }
 </script>
@@ -208,8 +207,8 @@
     .search {
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
-        padding-bottom: 30px;
+        margin-top: 20px;
+        height: 210px;
         box-sizing: border-box;
         background-color: white;
     }
@@ -253,8 +252,8 @@
         /*min-height:calc(100% - 230px);*/
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
+        margin-top: 20px;
         background-color: white;
-        height: calc(100% - 230px);
+        height: calc(100% - 250px);
     }
 </style>

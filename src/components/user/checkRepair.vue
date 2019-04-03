@@ -211,8 +211,12 @@
                             "phone": this.edit.phone,
                         })
                             .then((res) => {
-                                this.getData(this.page.currentPage, this.page.pageSize);
-                                this.$success("提交维修单成功")
+                                if (res.data.code === 0) {
+                                    this.getData(this.page.currentPage, this.page.pageSize);
+                                    this.$success("提交维修单成功")
+                                } else {
+                                    this.$fail(res.data.message);
+                                }
                             })
                             .catch((err) => {
                                 this.$fail("提交维修单失败")
@@ -227,6 +231,7 @@
                     note: '',
                     phone: '',
                 };
+                this.$refs['edit'].resetFields();
                 this.show_edit = false;
             },
 

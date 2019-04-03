@@ -11,7 +11,7 @@
         <el-dialog title="成员信息编辑" :visible.sync="show_edit" width="40%" :before-close="edit_close">
             <el-form :model="edit" ref="edit" :rules="rules" label-position="right" label-width="100px"
                      style="margin: 0 auto;">
-                <el-form-item label="公司名称：" prop="name">
+                <el-form-item label="名称：" prop="name">
                     <el-input v-model="edit.name"></el-input>
                 </el-form-item>
                 <el-form-item label="电话：" prop="phone">
@@ -58,12 +58,12 @@
             <el-table :data="tableData" border>
                 <el-table-column label="编码" align="center" prop="comEmpId"></el-table-column>
                 <el-table-column label="名称" align="center" prop="empName"></el-table-column>
-                <el-table-column label="电话" align="center" prop="phone"></el-table-column>
+                <el-table-column label="电话" align="center" prop="empPhone"></el-table-column>
                 <el-table-column label="创建时间" align="center" prop="createTime"></el-table-column>
                 <el-table-column label="操作" align="center" fixed="right">
                     <template slot-scope="scope">
-                        <el-button @click="edit(scope.row)" type="text" size="small">编辑</el-button>
-                        <el-button @click="del(scope.row)" type="text" size="small">删除</el-button>
+                        <el-button @click="edit_mes(scope.row)" type="text" size="small">编辑</el-button>
+                        <!--<el-button @click="del(scope.row)" type="text" size="small">删除</el-button>-->
                     </template>
                 </el-table-column>
             </el-table>
@@ -87,32 +87,32 @@
             return {
                 inquireForm: {
                     code: '', //编码查询
-                    status: null, //状态查询
+                    status: '', //状态查询
                     phone: '',//电话查询
                     types: [
                         {
-                            value: 1,
-                            label: "正常"
+                            value: true,
+                            label: "正常",
                         },
                         {
-                            value: 0,
-                            label: "未激活"
+                            value: false,
+                            label: "未激活",
                         }
                     ]
                 },
                 tableData: [],
                 page: {
                     //分页
-                    pageSize: 8, //每页显示的信息数目
+                    pageSize: 7, //每页显示的信息数目
                     total: 0, //总共的信息数目
                     currentPage: 1 //当前页数
                 },
+                edit_id: '',
                 show_edit: false,
                 show_del: false,
                 del_id: null,//要删除的成员信息
-                editData: {},//编辑时的数据
                 edit: {
-                    name: '',//编辑的公司名称
+                    name: '',//编辑的名称
                     phone: '',//编辑的电话
                 },
 
@@ -133,14 +133,14 @@
                 if (this.inquireForm.code) {
                     search.empId = this.inquireForm.code;
                 }
-                if (this.inquireForm.status) {
+                if (this.inquireForm.status !== '') {
                     search.status = this.inquireForm.status;
                 }
                 if (this.inquireForm.phone) {
                     search.phone = this.inquireForm.phone;
                 }
                 this.$post('/emp/info', {
-                    "search": search,
+                    "search": JSON.stringify(search),
                     "pageStr": {
                         "page": page,
                         "size": pageSize
@@ -161,29 +161,37 @@
             inquire() {
                 //查询
                 this.page.currentPage = 1;
-                this.page.pageSize = 8;
+                this.page.pageSize = 7;
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
             getAll() {
                 //获取所有的信息
                 this.inquireForm.code = '';
-                this.inquireForm.status = null;
+                this.inquireForm.status = '';
                 this.inquireForm.phone = '';
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
 
-            edit(row) {
-                this.editData = row;
+            edit_mes(row) {
+                this.edit_id = row.comEmpId;
                 this.show_edit = true;
             },
             edit_sure(formName) {
                 this.$refs[formName].validate((valid) => {
                     if (valid) {
-                        this.editData.empName = this.edit.name;
-                        this.editData.phone = this.edit.phone;
-                        this.$post('/emp/setInfo', this.editData)
+                        this.$post('/emp/setInfo', {
+                            "empId": this.edit_id,
+                            "empName": this.edit.name,
+                            "empPhone": this.edit.phone,
+                        })
                             .then((res) => {
-                                this.$success("编辑成员信息成功")
+                                if (res.data.code === 0) {
+                                    this.edit_close();
+                                    this.getData(this.page.currentPage, this.page.pageSize);
+                                    this.$success("编辑成员信息成功")
+                                } else {
+                                    this.$fail(res.data.message);
+                                }
                             })
                             .catch((err) => {
                                 this.$fail('编辑成员信息失败')
@@ -192,11 +200,12 @@
                 });
             },
             edit_close() {
-                this.editData = {};
+                this.edit_id = '';
                 this.edit = {
                     name: '',
                     phone: '',
                 };
+                this.$refs['edit'].resetFields();
                 this.show_edit = false;
             },
 
@@ -208,7 +217,13 @@
                 //确认删除某个成员信息
                 this.$get(`emp/delEmp/${this.del_id}`)
                     .then((res) => {
-                        this.$success("删除成功")
+                        if (res.data.code === 0) {
+                            this.del_close();
+                            this.getData(this.page.currentPage, this.page.pageSize);
+                            this.$success("删除成功")
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail("删除失败")
@@ -221,7 +236,7 @@
 
         },
         mounted() {
-            // this.getData(this.page.currentPage, this.page.pageSize);
+            this.getData(this.page.currentPage, this.page.pageSize);
         }
     }
 </script>
@@ -236,8 +251,8 @@
     .search {
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
-        padding-bottom: 30px;
+        margin-top: 20px;
+        height: 160px;
         box-sizing: border-box;
         background-color: white;
     }
@@ -281,8 +296,8 @@
         /*min-height:calc(100% - 230px);*/
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
+        margin-top: 20px;
         background-color: white;
-        height: calc(100% - 230px);
+        height: calc(100% - 200px);
     }
 </style>

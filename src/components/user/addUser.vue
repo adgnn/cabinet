@@ -56,8 +56,12 @@
                     "phone": this.form.phone,
                 })
                     .then((res) => {
-                        this.$success("新增成功");
-                        this.reset();
+                        if (res.data.code === 0) {
+                            this.$success("新增成功");
+                            this.reset();
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail("新增失败");

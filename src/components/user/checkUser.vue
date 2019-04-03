@@ -36,14 +36,14 @@
         </div>
         <div class="table">
             <el-table :data="tableData" border>
-                <el-table-column label="公司编码" align="center" prop="comId"></el-table-column>
-                <el-table-column label="公司名称" align="center" prop="comName"></el-table-column>
-                <el-table-column label="联系方式" align="center" prop="comAdminPhone"></el-table-column>
-                <el-table-column label="公司地址" align="center" prop="comAddress"></el-table-column>
-                <el-table-column label="创建日期" align="center" prop="createTime"></el-table-column>
+                <el-table-column label="公司编码" align="center" prop="comId" width="100"></el-table-column>
+                <el-table-column label="公司名称" align="center" prop="comName" width="220"></el-table-column>
+                <el-table-column label="联系方式" align="center" prop="comAdminPhone" width="180"></el-table-column>
+                <el-table-column label="创建日期" align="center" prop="createTime" width="200"></el-table-column>
+                <el-table-column label="公司地址" align="center" prop="comAddress" width="500"></el-table-column>
                 <el-table-column label="操作" align="center" fixed="right">
                     <template slot-scope="scope">
-                        <el-button @click="edit(scope.row)" type="text" size="small">关联设备</el-button>
+                        <el-button @click="edit_mes(scope.row)" type="text" size="small">关联设备</el-button>
                         <!--<el-button @click="del(scope.row)" type="text" size="small">删除</el-button>-->
                     </template>
                 </el-table-column>
@@ -73,11 +73,11 @@
                 tableData: [],
                 page: {
                     //分页
-                    pageSize: 8, //每页显示的信息数目
+                    pageSize: 7, //每页显示的信息数目
                     total: 0, //总共的信息数目
                     currentPage: 1 //当前页数
                 },
-                show_edit: true,
+                show_edit: false,
 
                 edit: {
                     equId: '',//关联的设备的id
@@ -104,7 +104,7 @@
                     search.comName = this.inquireForm.name;
                 }
                 this.$post('/sys/getC', {
-                    "search": search,
+                    "search": JSON.stringify(search),
                     "pageStr": {
                         "page": page,
                         "size": pageSize
@@ -119,13 +119,13 @@
                         }
                     })
                     .catch((err) => {
-                        this.$fail("获取用户信息失败")
+                        this.$fail("获取公司信息失败")
                     })
             },
             inquire() {
                 //查询
                 this.page.currentPage = 1;
-                this.page.pageSize = 8;
+                this.page.pageSize = 7;
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
             getAll() {
@@ -135,7 +135,7 @@
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
 
-            edit(row) {
+            edit_mes(row) {
                 this.edit.comId = row.comId;
                 this.show_edit = true;
             },
@@ -144,7 +144,12 @@
                     if (valid) {
                         this.$get(`sys/rec/${this.edit.equId}/${this.edit.comId}`)
                             .then((res) => {
-                                this.$success("关联设备成功")
+                                if (res.data.code === 0) {
+                                    this.edit_close();
+                                    this.$success("关联设备成功")
+                                } else {
+                                    this.$fail(res.data.message);
+                                }
                             })
                             .catch((err) => {
                                 this.$fail('关联设备失败')
@@ -157,13 +162,12 @@
                     equId: '',//关联的设备的id
                     comId: '',//公司id
                 };
+                this.$refs['edit'].resetFields();
                 this.show_edit = false;
             },
-
-
         },
         mounted() {
-            // this.getData(this.page.currentPage, this.page.pageSize);
+            this.getData(this.page.currentPage, this.page.pageSize);
         }
     }
 </script>
@@ -178,8 +182,8 @@
     .search {
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
-        padding-bottom: 30px;
+        margin-top: 20px;
+        height: 160px;
         box-sizing: border-box;
         background-color: white;
     }
@@ -223,8 +227,8 @@
         /*min-height:calc(100% - 230px);*/
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
+        margin-top: 20px;
         background-color: white;
-        height: calc(100% - 230px);
+        height: calc(100% - 200px);
     }
 </style>

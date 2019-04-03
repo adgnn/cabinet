@@ -1,6 +1,6 @@
 <template>
     <div class="parameterSet">
-        <!--编辑弹出框-->
+        <!--编辑参数弹出框-->
         <el-dialog title="参数信息编辑" :visible.sync="show_edit" width="40%" :before-close="edit_close">
             <el-form :model="edit" ref="edit" :rules="rules" label-position="right" label-width="100px"
                      style="margin: 0 auto;">
@@ -16,6 +16,22 @@
                 <el-button type="primary" @click="edit_sure('edit')">确 定</el-button>
             </div>
         </el-dialog>
+        <!--增加参数弹出框-->
+        <el-dialog title="参数信息编辑" :visible.sync="show_add" width="40%" :before-close="add_close">
+            <el-form :model="add" ref="add" :rules="rules" label-position="right" label-width="100px"
+                     style="margin: 0 auto;">
+                <el-form-item label="参数名称：" prop="name">
+                    <el-input v-model="add.name"></el-input>
+                </el-form-item>
+                <el-form-item label="参数值：" prop="value">
+                    <el-input v-model="add.value"></el-input>
+                </el-form-item>
+            </el-form>
+            <div class="dialog-footer" style="text-align: right">
+                <el-button @click="add_close">取 消</el-button>
+                <el-button type="primary" @click="add_sure('add')">确 定</el-button>
+            </div>
+        </el-dialog>
 
         <div class="table">
             <el-table :data="tableData" border>
@@ -24,11 +40,14 @@
                 <el-table-column label="参数值" align="center" prop="sysParamContent"></el-table-column>
                 <el-table-column label="操作" align="center" fixed="right">
                     <template slot-scope="scope">
-                        <el-button @click="edit(scope.row)" type="text" size="small">编辑</el-button>
+                        <el-button @click="edit_mes(scope.row)" type="text" size="small">编辑</el-button>
                         <!--<el-button @click="del(scope.row)" type="text" size="small">删除</el-button>-->
                     </template>
                 </el-table-column>
             </el-table>
+            <div class="add" style="text-align: center;margin-top:30px;">
+                <el-button type="primary" @click="add_mes">新增参数</el-button>
+            </div>
             <div style="text-align: center;margin-top: 20px">
                 <el-pagination
                         @current-change="handleCurrentChange"
@@ -58,6 +77,11 @@
                 show_edit: false,
                 edit: {
                     param_id: '',
+                    name: '',
+                    value: '',
+                },
+                show_add: false,
+                add: {
                     name: '',
                     value: '',
                 },
@@ -94,7 +118,7 @@
                     })
             },
 
-            edit(row) {
+            edit_mes(row) {
                 this.edit.param_id = row.sysParamId;
                 this.show_edit = true;
             },
@@ -107,7 +131,13 @@
                             "sysParamContent": this.edit.value,
                         })
                             .then((res) => {
-                                this.$success("编辑参数信息成功")
+                                if (res.data.code === 0) {
+                                    this.edit_close();
+                                    this.getData(this.page.currentPage, this.page.pageSize);
+                                    this.$success("编辑参数信息成功")
+                                } else {
+                                    this.$fail(res.data.message);
+                                }
                             })
                             .catch((err) => {
                                 this.$fail('编辑参数信息失败')
@@ -116,18 +146,53 @@
                 });
             },
             edit_close() {
-                this.editData = {};
                 this.edit = {
+                    param_id: '',
                     name: '',
                     phone: '',
                 };
+                this.$refs['edit'].resetFields();
                 this.show_edit = false;
+            },
+
+            add_mes(row) {
+                this.show_add = true;
+            },
+            add_sure(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        this.$post('/sys/setP', {
+                            "sysParamMark": this.add.name,
+                            "sysParamContent": this.add.value,
+                        })
+                            .then((res) => {
+                                if (res.data.code === 0) {
+                                    this.add_close();
+                                    this.getData(this.page.currentPage, this.page.pageSize);
+                                    this.$success("添加参数信息成功")
+                                } else {
+                                    this.$fail(res.data.message);
+                                }
+                            })
+                            .catch((err) => {
+                                this.$fail('添加参数信息失败')
+                            })
+                    }
+                });
+            },
+            add_close() {
+                this.add = {
+                    name: '',
+                    phone: '',
+                };
+                this.$refs['add'].resetFields();
+                this.show_add = false;
             },
 
 
         },
         mounted() {
-            // this.getData(this.page.currentPage, this.page.pageSize);
+            this.getData(this.page.currentPage, this.page.pageSize);
         }
     }
 </script>

@@ -25,7 +25,7 @@
                 <el-table-column label="设备编码" align="center" prop="equId"></el-table-column>
                 <el-table-column label="公司编码" align="center" prop="company.comId"></el-table-column>
                 <el-table-column label="公司名称" align="center" prop="company.comName"></el-table-column>
-                <el-table-column label="售出时间" align="center" prop=""></el-table-column>
+                <el-table-column label="售出时间" align="center" prop="createTime"></el-table-column>
             </el-table>
             <div style="text-align: center;margin-top: 20px">
                 <el-pagination
@@ -67,13 +67,13 @@
                 //获取设备列表
                 let search = {};
                 if (this.inquireForm.equipmentCode) {
-                    search.empId = this.inquireForm.equipmentCode;
+                    search.equId = this.inquireForm.equipmentCode;
                 }
                 if (this.inquireForm.companyCode) {
                     search.comId = this.inquireForm.companyCode;
                 }
                 this.$post('/equ/info', {
-                    "search": search,
+                    "search": JSON.stringify(search),
                     "pageStr": {
                         "page": page,
                         "size": pageSize
@@ -105,7 +105,7 @@
             },
         },
         mounted() {
-            // this.getData(this.page.currentPage, this.page.pageSize);
+            this.getData(this.page.currentPage, this.page.pageSize);
         }
     }
 </script>
@@ -119,9 +119,9 @@
 
     .search {
         width: 90%;
-        margin: 30px 0 0 5%;
+        margin: 20px 0 0 5%;
         box-sizing: border-box;
-        padding-bottom: 30px;
+        height:160px;
         background-color: white;
     }
 
@@ -164,8 +164,8 @@
         /*min-height:calc(100% - 230px);*/
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
+        margin-top: 20px;
         background-color: white;
-        height: calc(100% - 230px);
+        height: calc(100% - 200px);
     }
 </style>

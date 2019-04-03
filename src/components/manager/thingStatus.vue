@@ -9,11 +9,20 @@
                 <el-form-item>
                     <el-button class="search_button" @click="borrow_search">搜索用户</el-button>
                 </el-form-item>
+                <br/>
                 <el-form-item label="请选择成员:">
-                    <el-button v-for="item in users" class="search_s" :key="item.empId"
-                               @click="click_searchUser(item.empId)">
-                        {{item.empName}}
-                    </el-button>
+                    <el-select v-model="edit.empId" placeholder="请选择">
+                        <el-option
+                                v-for="item in users"
+                                :key="item.empId"
+                                :label="item.empName"
+                                :value="item.empId"
+                        ></el-option>
+                    </el-select>
+                    <!--<el-button v-for="item in users" class="search_s" :key="item.empId"-->
+                    <!--@click="click_searchUser(item.empId)">-->
+                    <!--{{item.empName}}-->
+                    <!--</el-button>-->
                 </el-form-item>
                 <div class="dialog-footer" style="text-align: right">
                     <el-button @click="edit_sure('edit')">确认转借</el-button>
@@ -36,21 +45,21 @@
                     </el-form-item>
                     <el-form-item>
                         <el-button class="search_button" @click="inquire">查询</el-button>
-                        <el-button @click="reset('inquireForm')">全部</el-button>
+                        <el-button @click="getAll">全部</el-button>
                     </el-form-item>
                 </el-form>
             </div>
         </div>
         <div class="table">
             <el-table :data="tableData" border>
-                <el-table-column label="物品编码" align="center" prop="goodsId"></el-table-column>
+                <el-table-column label="物品编码" align="center" prop="equGoodsOrder"></el-table-column>
                 <el-table-column label="物品名称" align="center" prop="goodsName"></el-table-column>
-                <el-table-column label="设备编码" align="center" prop="equ.equId"></el-table-column>
-                <el-table-column label="物品状态" align="center" prop="isExit"></el-table-column>
+                <el-table-column label="所在设备" align="center" prop="equId"></el-table-column>
+                <el-table-column label="物品状态" align="center" prop="isExist"></el-table-column>
                 <el-table-column label="借取人" align="center" prop="takeUser"></el-table-column>
                 <el-table-column label="操作" align="center" fixed="right">
                     <template slot-scope="scope">
-                        <el-button @click="borrow(scope.row)" type="text" size="small">转借</el-button>
+                        <el-button @click="edit_borrow(scope.row)" type="text" size="small">转借</el-button>
                     </template>
                 </el-table-column>
             </el-table>
@@ -79,7 +88,7 @@
                 tableData: [],
                 page: {
                     //分页
-                    pageSize: 8, //每页显示的信息数目
+                    pageSize: 7, //每页显示的信息数目
                     total: 0, //总共的信息数目
                     currentPage: 1 //当前页数
                 },
@@ -89,7 +98,7 @@
                 },
                 users: [],//转借弹出框的搜索成员列表
 
-                show_edit: true,
+                show_edit: false,
                 edit: {
                     goodsId: '',
                     empId: '',
@@ -110,9 +119,8 @@
                 if (this.inquireForm.name) {
                     search.goodsName = this.inquireForm.name;
                 }
-
-                this.$post('/emp/info', {
-                    "search": search,
+                this.$post('/equ/getGoodsInfo', {
+                    "search": JSON.stringify(search),
                     "pageStr": {
                         "page": page,
                         "size": pageSize
@@ -133,7 +141,7 @@
             inquire() {
                 //查询
                 this.page.currentPage = 1;
-                this.page.pageSize = 8;
+                this.page.pageSize = 7;
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
             getAll() {
@@ -143,26 +151,40 @@
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
 
-            edit(row) {
+            edit_borrow(row) {
+                if (row.isExist === "未取走") {
+                    this.$message("物品未取走，不能转借");
+                    return
+                }
                 this.edit.goodsId = row.goodsId;
                 this.show_edit = true;
             },
             edit_sure() {
+                if (this.edit.empId === '') {
+                    this.$message("请选择转借人");
+                    return
+                }
                 this.$get(`equ/ul/${this.edit.goodsId}/${this.edit.empId}`)
                     .then((res) => {
-                        this.edit_close();
-                        this.$success("物品转借成功")
+                        if (res.data.code === 0) {
+                            this.edit_close();
+                            this.getData(this.page.currentPage, this.page.pageSize);
+                            this.$success("物品转借成功")
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail('物品转借失败')
                     })
-
             },
             edit_close() {
                 this.edit = {
                     goodsId: '',
                     empId: '',
                 };
+                this.borrow.id = '';
+                this.edit.empId = '';
                 this.show_edit = false;
             },
             borrow_search(row) {
@@ -174,16 +196,20 @@
                     "search": this.borrow.id
                 })
                     .then((res) => {
-                        this.users = res.data.content;
-                        document.getElementsByClassName("search_s")[0].click();
+                        if (res.data.code === 0) {
+                            this.users = res.data.content;
+                            this.$success("搜索成功，请选择转借人")
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail("搜索失败")
                     })
             },
-            click_searchUser(id) {
-                this.edit.empId = id;
-            }
+            // click_searchUser(id) {
+            //     this.edit.empId = id;
+            // }
         },
         watch: {
             tableData: function () {
@@ -192,7 +218,10 @@
                     this.tableData[i].isExist = this.tableData[i].isExist ? "未取走" : "已取走";
                 }
             }
-        }
+        },
+        mounted() {
+            this.getData(this.page.currentPage, this.page.pageSize);
+        },
     }
 </script>
 
@@ -206,8 +235,8 @@
     .search {
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
-        padding-bottom: 30px;
+        margin-top: 20px;
+        height: 160px;
         box-sizing: border-box;
         background-color: white;
     }
@@ -251,8 +280,8 @@
         /*min-height:calc(100% - 230px);*/
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
+        margin-top: 20px;
         background-color: white;
-        height: calc(100% - 230px);
+        height: calc(100% - 200px);
     }
 </style>

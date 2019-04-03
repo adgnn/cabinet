@@ -8,10 +8,18 @@
             <div class="search_box">
                 <el-form :model="inquireForm" ref="inquireForm" :inline="true">
                     <el-form-item label="设备编码:">
-                        <el-button v-for="item in things" class="equipment" :key="item.equId"
-                                   @click="equipment(item.equId)">
-                            {{item.equId}}
-                        </el-button>
+                        <el-select v-model="equipment_id" placeholder="请选择">
+                            <el-option
+                                    v-for="item in things"
+                                    :key="item.equId"
+                                    :label="item.equId"
+                                    :value="item.equId"
+                            ></el-option>
+                        </el-select>
+                        <!--<el-button v-for="item in things" class="equipment" :key="item.equId"-->
+                        <!--@click="equipment(item.equId)">-->
+                        <!--{{item.equId}}-->
+                        <!--</el-button>-->
                     </el-form-item>
                 </el-form>
             </div>
@@ -20,10 +28,18 @@
             <div class="parts">
                 <div class="title">部件列表</div>
                 <div class="little_parts">
-                    <el-button v-for="item in parts" :key="item.partsId"
-                               class="every_part"
-                               @click="part(item.partsId)">{{item.partsDetail}}
-                    </el-button>
+                    <el-select v-model="part_id" placeholder="请选择">
+                        <el-option
+                                v-for="item in parts"
+                                :key="item.partsId"
+                                :label="item.partsDetail"
+                                :value="item.partsId"
+                        ></el-option>
+                    </el-select>
+                    <!--<el-button v-for="item in parts" :key="item.partsId"-->
+                    <!--class="every_part"-->
+                    <!--@click="part(item.partsId)">{{item.partsDetail}}-->
+                    <!--</el-button>-->
                 </div>
             </div>
             <div class="question">
@@ -51,10 +67,10 @@
         data() {
             return {
                 things: [],//设备列表
-                equipment_id: null,//设备id
+                equipment_id: '',//设备id
 
                 parts: [],//部件列表
-                part_id: null,
+                part_id: '',
 
                 content: '',
                 phone: '',
@@ -63,9 +79,14 @@
         methods: {
             getThing() {
                 //获取设备列表
-                this.$get('equ/info')
+                this.$get('/equ/equInfo')
                     .then((res) => {
-                        this.things = res.data.content
+                        if (res.data.code === 0) {
+                            this.things = res.data.content;
+
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail('获取设备列表失败');
@@ -79,7 +100,14 @@
                 //获取部件列表
                 this.$get("equ/parts")
                     .then((res) => {
-                        this.parts = res.data.content;
+                        if (res.data.code === 0) {
+                            this.parts = res.data.content;
+                            this.$nextTick(() => {
+                                document.getElementsByClassName("every_part")[0].click();
+                            })
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail("获取部件列表失败")
@@ -90,6 +118,14 @@
             },
 
             submit() {
+                if (this.equipment_id === '') {
+                    this.$message("请选择设备！");
+                    return
+                }
+                if (this.part_id === '') {
+                    this.$message("请选择部件！");
+                    return
+                }
                 if (this.content === '') {
                     this.$message("请填写问题反馈内容！");
                     return
@@ -106,9 +142,15 @@
                     "note": this.content
                 })
                     .then((res) => {
-                        this.$success("问题反馈成功");
-                        this.content = "";
-                        this.phone = "";
+                        if (res.data.code === 0) {
+                            this.content = "";
+                            this.phone = "";
+                            this.equipment_id = '';
+                            this.part_id = '';
+                            this.$success("问题反馈成功");
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail("问题反馈失败")
@@ -116,10 +158,8 @@
             }
         },
         mounted() {
-            // this.getThing();
-            // this.getParts();
-            document.getElementsByClassName("equipment")[0].click();
-            document.getElementsByClassName("every_part")[0].click();
+            this.getThing();
+            this.getParts();
         }
     }
 </script>

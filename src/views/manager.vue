@@ -136,8 +136,8 @@
                 this.$refs[formName].validate((valid) => {
                     if (valid) {
                         this.$post("/emp/changeP", {
-                            "oldpassword": this.PasswordForm.old,
-                            "newpassword": this.PasswordForm.pass
+                            "oldpassword": hex_md5(this.PasswordForm.old),
+                            "newpassword": hex_md5(this.PasswordForm.pass)
                         })
                             .then((res) => {
                                 this.$success("修改密码成功");

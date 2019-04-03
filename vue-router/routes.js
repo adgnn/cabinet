@@ -34,7 +34,7 @@ export default [
         children: [
             {
                 path: '/',
-                component: m_checkUser
+                component: hello
             },
             {
                 path: 'checkUser',
@@ -68,7 +68,7 @@ export default [
         children: [
             {
                 path: '/',
-                component: u_checkUser
+                component: hello
             },
             {
                 path: 'addUser',

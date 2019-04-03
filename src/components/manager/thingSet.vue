@@ -1,6 +1,6 @@
 <template>
     <div class="thingSet">
-        <!--编辑弹出框-->
+        <!--编辑物品弹出框-->
         <el-dialog title="物品名称编辑" :visible.sync="show_edit" width="40%" :before-close="edit_close">
             <el-form :model="edit" ref="edit" :rules="rules" label-position="right" label-width="100px"
                      style="margin: 0 auto;">
@@ -13,6 +13,28 @@
                 <el-button type="primary" @click="edit_sure('edit')">确 定</el-button>
             </div>
         </el-dialog>
+        <!--添加物品弹出框-->
+        <el-dialog title="添加或者编辑物品" :visible.sync="show_add" width="40%" :before-close="add_close">
+            <el-form :model="add" ref="add" :rules="rules" label-position="right" label-width="100px"
+                     style="margin: 0 auto;">
+                <el-form-item label="物品框" prop="id">
+                    <el-select v-model="add.id" placeholder="请选择物品框">
+                        <el-option
+                                v-for="item in add.total"
+                                :key="item"
+                                :value="item"
+                        ></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="物品名称：" prop="name">
+                    <el-input v-model="add.name"></el-input>
+                </el-form-item>
+            </el-form>
+            <div class="dialog-footer" style="text-align: right">
+                <el-button @click="add_close">取 消</el-button>
+                <el-button type="primary" @click="add_sure('add')">确 定</el-button>
+            </div>
+        </el-dialog>
 
         <div class="search">
             <div class="search_title_box">
@@ -20,10 +42,10 @@
                 <span class="search_title">物品设置</span>
             </div>
             <div class="search_box">
-                <el-form :model="inquireForm" ref="inquireForm" :inline="true">
+                <el-form ref="inquireForm" :inline="true">
                     <el-form-item label="设备编码:">
-                        <el-button v-for="item in things" class="equipment" :key="item.equId"
-                                   @click="equipment(item.equId)">
+                        <el-button v-for="item in things" class="thingSet_equipment" :key="item.equId"
+                                   @click="equipment(item.equId,item.goodsCount)">
                             {{item.equId}}
                         </el-button>
                         <!--<el-button @click="reset('inquireForm')">001</el-button>-->
@@ -35,14 +57,18 @@
         </div>
         <div class="table">
             <el-table :data="tableData" border>
-                <el-table-column label="物品栏" align="center" prop="goodsId"></el-table-column>
+                <el-table-column label="物品栏" align="center" prop="equGoodsOrder"></el-table-column>
                 <el-table-column label="物品名称" align="center" prop="goodsName"></el-table-column>
+                <el-table-column label="所在设备" align="center" prop="equId"></el-table-column>
                 <el-table-column label="操作" align="center" fixed="right">
                     <template slot-scope="scope">
-                        <el-button @click="edit(scope.row)" type="text" size="small">编辑</el-button>
+                        <el-button @click="edit_mes(scope.row)" type="text" size="small">编辑</el-button>
                     </template>
                 </el-table-column>
             </el-table>
+            <div class="add" style="text-align: center;margin-top:30px;">
+                <el-button type="primary" @click="add_mes">添加编辑物品</el-button>
+            </div>
             <div style="text-align: center;margin-top: 20px">
                 <el-pagination
                         @current-change="handleCurrentChange"
@@ -70,7 +96,7 @@
                     currentPage: 1 //当前页数
                 },
                 equipment_id: null,
-                show_edit: true,
+                show_edit: false,
                 edit_id: null,//要编辑的物品id（物品栏id）
 
                 edit: {
@@ -78,21 +104,38 @@
                 },
                 rules: {//修改信息验证规则
                     name: [{required: true, message: '请输入要修改的物品名称', trigger: 'blur'}],
-                }
+                    id: [{required: true, message: '请选择物品栏', trigger: 'blur'}],
+                },
+
+
+                show_add: false,
+                add: {
+                    goodsId: '',//物品栏id
+                    name: '',//编辑物品的名字
+                    total: '',//这个设备共有多少物品栏
+                },
             }
         },
         methods: {
             getThing() {
-                this.$get('equ/info')
+                this.$get('/equ/equInfo')
                     .then((res) => {
-                        this.things = res.data.content
+                        if (res.data.code === 0) {
+                            this.things = res.data.content;
+                            this.$nextTick(() => {
+                                document.getElementsByClassName("thingSet_equipment")[0].click();
+                            });
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail('获取设备列表失败');
                     })
             },
-            equipment(id) {
+            equipment(id, total) {
                 this.equipment_id = id;
+                this.add.total = total;
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
 
@@ -105,8 +148,8 @@
                 let search = {
                     "equId": this.equipment_id
                 };
-                this.$post('/emp/info', {
-                    "search": search,
+                this.$post('/equ/getGoodsInfo', {
+                    "search": JSON.stringify(search),
                     "pageStr": {
                         "page": page,
                         "size": pageSize
@@ -126,16 +169,22 @@
             },
 
 
-            edit(row) {
-                this.edit_id = row.goodsId;
+            edit_mes(row) {
+                this.edit_id = row.equGoodsOrder;
                 this.show_edit = true;
             },
             edit_sure(formName) {
                 this.$refs[formName].validate((valid) => {
                     if (valid) {
-                        this.$get(`/equ/ship/${this.equipment_id}/${this.edit_id}/${this.edit.name}`)
+                        this.$post(`/equ/ship/${this.equipment_id}/${this.edit_id}/${this.edit.name}`)
                             .then((res) => {
-                                this.$success("编辑物品名称成功")
+                                if (res.data.code === 0) {
+                                    this.edit_close();
+                                    this.getData(this.page.currentPage, this.page.pageSize);
+                                    this.$success("编辑物品名称成功")
+                                } else {
+                                    this.$fail(res.data.message);
+                                }
                             })
                             .catch((err) => {
                                 this.$fail('编辑物品名称失败')
@@ -146,12 +195,41 @@
             edit_close() {
                 this.edit_id = null;
                 this.edit.name = "";
+                this.$refs['edit'].resetFields();
                 this.show_edit = false;
+            },
+
+            add_mes(row) {
+                this.show_add = true;
+            },
+            add_sure(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        this.$post(`/equ/ship/${this.equipment_id}/${this.add.id}/${this.add.name}`)
+                            .then((res) => {
+                                if (res.data.code === 0) {
+                                    this.add_close();
+                                    this.getData(this.page.currentPage, this.page.pageSize);
+                                    this.$success("编辑物品名称成功")
+                                } else {
+                                    this.$fail(res.data.message);
+                                }
+                            })
+                            .catch((err) => {
+                                this.$fail('编辑物品名称失败')
+                            })
+                    }
+                });
+            },
+            add_close() {
+                this.add.id = '';
+                this.add.name = '';
+                this.$refs['add'].resetFields();
+                this.show_add = false;
             },
         },
         mounted() {
-            // this.getThing();
-            document.getElementsByClassName("equipment")[0].click();
+            this.getThing();
         }
     }
 </script>

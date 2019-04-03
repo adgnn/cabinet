@@ -12,10 +12,18 @@
             <el-form :model="edit" ref="edit" :rules="rules" label-position="right" label-width="100px"
                      style="margin: 0 auto;">
                 <el-form-item label="用户组:">
-                    <el-button v-for="item in users" class="user_s" :key="item.sysRoleId"
-                               @click="user(item.sysRoleId)">
-                        {{item.sysRoleName}}
-                    </el-button>
+                    <el-select v-model="edit.user_id" placeholder="请选择">
+                        <el-option
+                                v-for="item in users"
+                                :key="item.sysGroupId"
+                                :label="item.sysGroupName"
+                                :value="item.sysGroupId"
+                        ></el-option>
+                    </el-select>
+                    <!--<el-button v-for="item in users" class="user_s" :key="item.sysRoleId"-->
+                    <!--@click="user(item.sysRoleId)">-->
+                    <!--{{item.sysRoleName}}-->
+                    <!--</el-button>-->
                 </el-form-item>
                 <el-form-item label="姓名：" prop="name">
                     <el-input v-model="edit.name"></el-input>
@@ -49,7 +57,7 @@
                     <el-form-item>
                         <el-button class="search_button" @click="inquire">查询</el-button>
                         <el-button @click="getAll">全部</el-button>
-                        <el-button @click="edit">新增用户</el-button>
+                        <el-button @click="edit_mes">新增用户</el-button>
                     </el-form-item>
                 </el-form>
             </div>
@@ -97,7 +105,7 @@
                 },
 
                 users: [],//所有用户组
-                show_edit: true,
+                show_edit: false,
                 edit: {
                     name: '',
                     phone: '',
@@ -131,7 +139,7 @@
                         search.sysGroupName = this.inquireForm.users_name;
                     }
                     this.$post('/sys/getU', {
-                        "search": search,
+                        "search": JSON.stringify(search),
                         "pageStr": {
                             "page": page,
                             "size": pageSize
@@ -166,20 +174,24 @@
                     //获取用户组
                     this.$get('/sys/getG')
                         .then((res) => {
-                            this.users = res.data.sysRoles;
+                            if (res.data.code === 0) {
+                                this.users = res.data.content;
+                            } else {
+                                this.$fail(res.data.message);
+                            }
                         })
                         .catch((err) => {
                             this.$fail("获取用户组信息失败")
                         })
                 },
-                user(id) {
-                    this.edit.user_id = id;
-                },
-
-                edit() {
+                edit_mes() {
                     this.show_edit = true;
                 },
                 edit_sure(formName) {
+                    if (this.edit.user_id === '') {
+                        this.$message("请选择用户组");
+                        return
+                    }
                     this.$refs[formName].validate((valid) => {
                         if (valid) {
                             this.$post('/sys/addU', {
@@ -189,8 +201,12 @@
                                 "sysUserPassword": this.edit.pass
                             })
                                 .then((res) => {
-                                    this.edit_close();
-                                    this.$success("编辑成员信息成功")
+                                    if (res.data.code === 0) {
+                                        this.edit_close();
+                                        this.$success("编辑成员信息成功")
+                                    } else {
+                                        this.$fail(res.data.message);
+                                    }
                                 })
                                 .catch((err) => {
                                     this.$fail('编辑成员信息失败')
@@ -205,6 +221,7 @@
                         pass: '',
                         user_id: ''
                     };
+                    this.$refs['edit'].resetFields();
                     this.show_edit = false;
                 },
 
@@ -216,8 +233,12 @@
                     //确认删除某个成员信息
                     this.$get(`/sys/delU/${this.del_id}`)
                         .then((res) => {
-                            this.del_close();
-                            this.$success("删除成功")
+                            if (res.data.code === 0) {
+                                this.del_close();
+                                this.$success("删除成功")
+                            } else {
+                                this.$fail(res.data.message);
+                            }
                         })
                         .catch((err) => {
                             this.$fail("删除失败")
@@ -231,9 +252,9 @@
             }
         ,
         mounted() {
-            // this.getData(this.page.currentPage, this.page.pageSize);
-            //this.getUsers();
-            document.getElementsByClassName("user_s")[0].click();
+            this.getData(this.page.currentPage, this.page.pageSize);
+            this.getUsers();
+            // document.getElementsByClassName("user_s")[0].click();
 
         }
     }
@@ -249,8 +270,8 @@
     .search {
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
-        padding-bottom: 30px;
+        margin-top: 20px;
+        height: 160px;
         box-sizing: border-box;
         background-color: white;
     }
@@ -294,8 +315,8 @@
         /*min-height:calc(100% - 230px);*/
         width: 90%;
         margin-left: 5%;
-        margin-top: 30px;
+        margin-top: 20px;
         background-color: white;
-        height: calc(100% - 230px);
+        height: calc(100% - 200px);
     }
 </style>

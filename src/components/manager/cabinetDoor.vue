@@ -6,15 +6,20 @@
                 <span class="search_title">柜门管理</span>
             </div>
             <div class="search_box">
-                <el-form :model="inquireForm" ref="inquireForm" :inline="true">
+                <el-form :inline="true">
                     <el-form-item label="设备编码:">
-                        <el-button v-for="item in things" class="equipment" :key="item.equId"
-                                   @click="equipment(item.equId)">
-                            {{item.equId}}
-                        </el-button>
-                        <!--<el-button @click="reset('inquireForm')">001</el-button>-->
-                        <!--<el-button @click="reset('inquireForm')">002</el-button>-->
-                        <!--<el-button @click="reset('inquireForm')">003</el-button>-->
+                        <el-select v-model="equipment_id" placeholder="请选择">
+                            <el-option
+                                    v-for="item in things"
+                                    :key="item.equId"
+                                    :label="item.equId"
+                                    :value="item.equId"
+                            ></el-option>
+                        </el-select>
+                        <!--<el-button v-for="item in things" class="equipment" :key="item.equId"-->
+                        <!--@click="equipment(item.equId)">-->
+                        <!--{{item.equId}}-->
+                        <!--</el-button>-->
                     </el-form-item>
                 </el-form>
             </div>
@@ -25,13 +30,22 @@
                 <span class="search_title">打开柜门</span>
             </div>
             <div class="door">
-                <div class="left"><span class="open_door" @click="openDoor('1')">点击开门</span></div>
-                <div class="right_top"><span class="open_door" @click="openDoor('2')">点击开门</span></div>
-                <div class="right_down"><span class="open_door" @click="openDoor('3')">点击开门</span></div>
+                <div class="left">
+                    <span class="open_door" @click="openDoor('1')">{{door_left}}
+                        <i class="el-icon-loading" style="font-weight:500" v-if="left"></i></span>
+                </div>
+                <div class="right_top"><span class="open_door" @click="openDoor('2')">
+                    {{door_right_top}}
+                    <i class="el-icon-loading" style="font-weight:500" v-if="right_top"></i></span>
+                </div>
+                <div class="right_down"><span class="open_door" @click="openDoor('3')">
+                    {{door_right_down}}
+                    <i class="el-icon-loading" style="font-weight:500" v-if="right_down"></i></span>
+                </div>
             </div>
 
             <div class="question">
-                <div class="title" @click="check">设备自检</div>
+                <div class="title" @click="check_appliance">设备自检</div>
                 <div class="little_question">
                     {{check}}
                 </div>
@@ -58,40 +72,100 @@
                     total: 0, //总共的信息数目
                     currentPage: 1 //当前页数
                 },
-                equipment_id: null,//设备id
+                equipment_id: '',//设备id
 
                 check: '',//设备自检返回结果
+
+                door_left: "点击开门",
+                door_right_top: "点击开门",
+                door_right_down: "点击开门",
+
+                left: false,
+                right_top: false,
+                right_down: false,
+
+                ifOpenDoor: false,//是否正在开门
+                ifCheck: false,//是否正在设备自检
             }
         },
         methods: {
             getThing() {
-                this.$get('equ/info')
+                this.$get('/equ/equInfo')
                     .then((res) => {
-                        this.things = res.data.content
+                        if (res.data.code === 0) {
+                            this.things = res.data.content;
+                            this.$nextTick(() => {
+                                document.getElementsByClassName("equipment")[0].click();
+                            })
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail('获取设备列表失败');
                     })
             },
-            equipment(id) {
-                this.equipment_id = id;
-                this.getParts(this.equipment_id);
-            },
 
             openDoor(doorId) {
-                this.$get(`equ/open/${this.equipment_id}/doorId`)
+                if (this.ifOpenDoor) {
+                    this.$message("正在开门，请稍后");
+                    return
+                }
+                this.ifOpenDoor = true;
+                if (this.equipment_id === '') {
+                    this.$message("请选择设备");
+                    return
+                }
+                if (doorId === '1') {
+                    this.door_left = "正在开门";
+                    this.left = true;
+                } else if (doorId === '2') {
+                    this.door_right_top = "正在开门";
+                    this.right_top = true;
+                } else if (doorId === '3') {
+                    this.door_right_down = "正在开门";
+                    this.right_down = true;
+                }
+                this.$get(`equ/open/${this.equipment_id}/${doorId}`)
                     .then((res) => {
-                        this.$success("正在开门，请稍后")
+                        if (doorId === '1') {
+                            this.door_left = "点击开门";
+                            this.left = false;
+                        } else if (doorId === '2') {
+                            this.door_right_top = "点击开门";
+                            this.right_top = false;
+                        } else if (doorId === '3') {
+                            this.door_right_down = "点击开门";
+                            this.right_down = false;
+                        }
+                        if (res.data.code === 0) {
+                            this.$success("开门成功");
+                            this.ifOpenDoor = false;
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail("开门失败")
                     })
+
             },
-            check() {
+            check_appliance() {
                 //设备自检
+                if (this.ifCheck) {
+                    this.$message("设备正在自检，请稍后");
+                    return
+                }
+                this.ifCheck = true;
                 this.$get(`equ/check/${this.equipment_id}`)
                     .then((res) => {
-                        this.$success("设备自检成功")
+                        if (res.data.code === 0) {
+                            this.check = res.data.message;
+                            this.$success("设备自检成功");
+                            this.ifCheck = false;
+                        } else {
+                            this.$fail(res.data.message);
+                        }
                     })
                     .catch((err) => {
                         this.$fail("设备自检失败")
@@ -99,8 +173,7 @@
             },
         },
         mounted() {
-            // this.getThing();
-            document.getElementsByClassName("equipment")[0].click();
+            this.getThing();
         }
     }
 </script>

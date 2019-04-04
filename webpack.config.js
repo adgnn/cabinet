@@ -86,7 +86,7 @@ if (isDev) {
     };
     config.output = {
         filename: '[name].[chunkhash:8].js',
-        path: path.join(__dirname, 'case'),
+        path: path.join(__dirname, 'manager'),
         publicPath: '/'
     };
     config.module.rules.push({
@@ -112,6 +112,12 @@ if (isDev) {
             chunks: 'all'
         },
         runtimeChunk: true
+    };
+    config.externals = {
+        'vue': 'Vue',
+        'vue-router': 'VueRouter',
+        'vuex': 'Vuex',
+        'axios': 'axios'
     }
 }
 

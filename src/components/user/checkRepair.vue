@@ -1,11 +1,11 @@
 <template>
     <div class="checkRepair">
         <!--提交维修单弹出框-->
-        <el-dialog title="成员信息编辑" :visible.sync="show_edit" width="40%" :before-close="edit_close">
+        <el-dialog title="提交维修单" :visible.sync="show_edit" width="40%" :before-close="edit_close">
             <el-form :model="edit" ref="edit" :rules="rules" label-position="right" label-width="100px"
                      style="margin: 0 auto;">
                 <el-form-item label="损坏描述：" prop="note">
-                    <el-input v-model="edit.name"></el-input>
+                    <el-input v-model="edit.note"></el-input>
                 </el-form-item>
                 <el-form-item label="电话：" prop="phone">
                     <el-input v-model="edit.phone"></el-input>
@@ -59,14 +59,14 @@
         <div class="table">
             <el-table :data="tableData" border>
                 <el-table-column label="维修状态" align="center" prop="fixStatus"></el-table-column>
-                <el-table-column label="创建时间" align="center" prop="createTime"></el-table-column>
-                <el-table-column label="维修单编号" align="center" prop="fixBillId"></el-table-column>
-                <el-table-column label="设备编码" align="center" prop="equ.equId"></el-table-column>
-                <el-table-column label="公司名称" align="center" prop="equ.company.comName"></el-table-column>
-                <el-table-column label="部件" align="center" prop="parts.partsDetail"></el-table-column>
-                <el-table-column label="损坏描述" align="center" prop="partsStatus"></el-table-column>
+                <el-table-column label="创建时间" align="center" prop="createTime" width="170"></el-table-column>
+                <el-table-column label="维修单号" align="center" prop="fixBillId"></el-table-column>
+                <el-table-column label="设备编码" align="center" prop="equId"></el-table-column>
+                <el-table-column label="公司名称" align="center" prop="comName" width="210"></el-table-column>
+                <el-table-column label="部件" align="center" prop="partsDetail"></el-table-column>
+                <el-table-column label="损坏描述" align="center" prop="partsStatus" width="150"></el-table-column>
                 <el-table-column label="维修人" align="center" prop="sysUserName"></el-table-column>
-                <el-table-column label="维修时间" align="center" prop="fixTime"></el-table-column>
+                <el-table-column label="维修时间" align="center" prop="fixTime" width="170"></el-table-column>
                 <el-table-column label="操作" align="center" fixed="right">
                     <template slot-scope="scope">
                         <el-button @click="submit(scope.row)" type="text" size="small">编辑</el-button>
@@ -87,15 +87,17 @@
 </template>
 
 <script>
+    import qs from 'qs'
+
     export default {
         name: "checkRepair",
         data() {
             return {
                 inquireForm: {
-                    time: null,//时间查询
+                    time: '',//时间查询
                     code: '', //设备编码
                     part: '', //部件
-                    isRepair: null,//是否维修
+                    isRepair: '',//是否维修
                     times: [
                         {
                             value: 0,
@@ -128,7 +130,7 @@
                     total: 0, //总共的信息数目
                     currentPage: 1 //当前页数
                 },
-                show_edit: true,
+                show_edit: false,
                 fixed_id: '',//提交维修单的id
                 edit: {
                     note: '',
@@ -148,7 +150,7 @@
             getData(page, pageSize) {
                 //获取维修单列表
                 let search = {};
-                if (this.inquireForm.time) {
+                if (this.inquireForm.time !== '') {
                     search.createTime = this.inquireForm.time;
                 }
                 if (this.inquireForm.code) {
@@ -157,11 +159,11 @@
                 if (this.inquireForm.part) {
                     search.partId = this.inquireForm.part;
                 }
-                if (this.inquireForm.isRepair) {
+                if (this.inquireForm.isRepair !== '') {
                     search.isFixed = this.inquireForm.isRepair;
                 }
                 this.$post('/equ/fixInfo', {
-                    "search": search,
+                    "search": JSON.stringify(search),
                     "pageStr": {
                         "page": page,
                         "size": pageSize
@@ -176,7 +178,7 @@
                         }
                     })
                     .catch((err) => {
-                        this.$fail("获取用户信息失败")
+                        this.$fail("获取维修单信息失败")
                     })
             },
             inquire() {
@@ -188,8 +190,8 @@
             getAll() {
                 //获取所有的信息
                 this.inquireForm.code = '';
-                this.inquireForm.time = null;
-                this.inquireForm.isRepair = null;
+                this.inquireForm.time = '';
+                this.inquireForm.isRepair = '';
                 this.inquireForm.part = '';
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
@@ -212,6 +214,7 @@
                         })
                             .then((res) => {
                                 if (res.data.code === 0) {
+                                    this.edit_close();
                                     this.getData(this.page.currentPage, this.page.pageSize);
                                     this.$success("提交维修单成功")
                                 } else {
@@ -237,7 +240,7 @@
 
         },
         mounted() {
-            // this.getData(this.page.currentPage, this.page.pageSize);
+            this.getData(this.page.currentPage, this.page.pageSize);
         },
         watch: {
             tableData: function () {

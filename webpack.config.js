@@ -87,7 +87,7 @@ if (isDev) {
     config.output = {
         filename: '[name].[chunkhash:8].js',
         path: path.join(__dirname, 'case'),
-        publicPath: '/case/'
+        publicPath: '/'
     };
     config.module.rules.push({
         test: /\.css$/,

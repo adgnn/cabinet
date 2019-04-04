@@ -4,6 +4,7 @@ import User from '../src/views/user.vue'
 
 import hello from '../src/views/hello.vue'
 
+
 import m_accessLogs from '../src/components/manager/accessLogs.vue'
 import m_cabinetDoor from '../src/components/manager/cabinetDoor.vue'
 import m_checkUser from '../src/components/manager/checkUser.vue'

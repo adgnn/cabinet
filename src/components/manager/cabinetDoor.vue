@@ -32,15 +32,15 @@
             <div class="door">
                 <div class="left">
                     <span class="open_door" @click="openDoor('1')">{{door_left}}
-                        <i class="el-icon-loading" style="font-weight:500" v-if="left"></i></span>
+                        <i class="el-icon-loading" style="font-weight:500" v-show="left"></i></span>
                 </div>
                 <div class="right_top"><span class="open_door" @click="openDoor('2')">
                     {{door_right_top}}
-                    <i class="el-icon-loading" style="font-weight:500" v-if="right_top"></i></span>
+                    <i class="el-icon-loading" style="font-weight:500" v-show="right_top"></i></span>
                 </div>
                 <div class="right_down"><span class="open_door" @click="openDoor('3')">
                     {{door_right_down}}
-                    <i class="el-icon-loading" style="font-weight:500" v-if="right_down"></i></span>
+                    <i class="el-icon-loading" style="font-weight:500" v-show="right_down"></i></span>
                 </div>
             </div>
 
@@ -94,9 +94,9 @@
                     .then((res) => {
                         if (res.data.code === 0) {
                             this.things = res.data.content;
-                            this.$nextTick(() => {
-                                document.getElementsByClassName("equipment")[0].click();
-                            })
+                            // this.$nextTick(() => {
+                            //     document.getElementsByClassName("equipment")[0].click();
+                            // })
                         } else {
                             this.$fail(res.data.message);
                         }
@@ -111,7 +111,6 @@
                     this.$message("正在开门，请稍后");
                     return
                 }
-                this.ifOpenDoor = true;
                 if (this.equipment_id === '') {
                     this.$message("请选择设备");
                     return
@@ -126,6 +125,7 @@
                     this.door_right_down = "正在开门";
                     this.right_down = true;
                 }
+                this.ifOpenDoor = true;
                 this.$get(`equ/open/${this.equipment_id}/${doorId}`)
                     .then((res) => {
                         if (doorId === '1') {

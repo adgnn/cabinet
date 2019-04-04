@@ -6,7 +6,7 @@
                 <span class="search_title">设备编号</span>
             </div>
             <div class="search_box">
-                <el-form :model="inquireForm" ref="inquireForm" :inline="true">
+                <el-form  ref="inquireForm" :inline="true">
                     <el-form-item label="设备编码:">
                         <el-select v-model="equipment_id" placeholder="请选择">
                             <el-option
@@ -102,9 +102,9 @@
                     .then((res) => {
                         if (res.data.code === 0) {
                             this.parts = res.data.content;
-                            this.$nextTick(() => {
-                                document.getElementsByClassName("every_part")[0].click();
-                            })
+                            // this.$nextTick(() => {
+                            //     document.getElementsByClassName("every_part")[0].click();
+                            // })
                         } else {
                             this.$fail(res.data.message);
                         }

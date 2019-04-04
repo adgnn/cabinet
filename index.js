@@ -3,14 +3,14 @@ import Vuex from 'vuex';
 import VueRouter from 'vue-router';
 import App from './src/views/app.vue';
 import axios from 'axios';
-import qs from 'qs';
+// import qs from 'qs';
 import {get, post, put, deleteDate,success, fail} from './utils/http.js'
 
 Vue.prototype.$get = get;
 Vue.prototype.$post = post;
 Vue.prototype.$put = put;
 Vue.prototype.$delete = deleteDate;
-Vue.prototype.$qs = qs;
+// Vue.prototype.$qs = qs;
 Vue.prototype.$success = success;
 Vue.prototype.$fail = fail;
 

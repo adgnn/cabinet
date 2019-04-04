@@ -133,9 +133,10 @@
                         this.$fail('获取设备列表失败');
                     })
             },
-            equipment(id, total) {
+            equipment(id,total) {
                 this.equipment_id = id;
                 this.add.total = total;
+                console.log("afs");
                 this.getData(this.page.currentPage, this.page.pageSize);
             },
 

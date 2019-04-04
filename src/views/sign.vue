@@ -12,7 +12,7 @@
                     <input v-model="form.password" class="self-input" type="password" placeholder="密码"/>
                 </el-form-item>
             </el-form>
-            <div class="register_button" @click="register">注册</div>
+            <!--<div class="register_button" @click="register">注册</div>-->
             <div class="sign_button" @click="login">登陆</div>
         </div>
     </div>
@@ -24,6 +24,8 @@
         mapState,
         mapMutations,
     } from 'vuex'
+    import qs from 'qs'
+    import md5 from 'js-md5'
 
     export default {
         name: "sign",
@@ -45,23 +47,25 @@
                     this.$message('请填写密码！');
                     return
                 }
-                let data = this.$qs.stringify({
+                let pass = md5(this.form.password + 'ashley');
+                let data = qs.stringify({
                     "username": this.form.username,
-                    "password": this.form.password,
+                    "password": md5(pass + 'ashley'),
                 });
-                this.$post("/token-auth/", data)
+                this.$post("/user/login", data)
                     .then((res) => {
-                        this.$router.push('/case/manager/caseReview');
-                        this['setToken'](res.data.token);
-                        this['setRole'](res.data.role);
+                        if (res.data.code === 0) {
+                            this['setRole'](res.data.content.company.comName);
+                            this.$success("登陆成功")
+                        } else {
+                            this.$fail(res.data.message)
+                        }
                     })
                     .catch((err) => {
+                        this.$fail("登陆失败")
                     })
             },
-            register() {
-
-            },
-            ...mapMutations(['setToken', 'setRole']),
+            ...mapMutations(['setRole']),
         }
     }
 </script>
@@ -127,23 +131,16 @@
         width: 80%;
     }
 
-    .register_button, .sign_button {
-        margin-top: 10px;
+    .sign_button {
+        margin: 40px auto;
         height: 41px;
         cursor: pointer;
         line-height: 41px;
-        float: left;
-        width: 40%;
+        /*float: left;*/
+        width: 80%;
         box-sizing: border-box;
         text-align: center;
         letter-spacing: 2px;
-    }
-
-    .register_button {
-        margin-left: 10%;
-        color: #C2C2C2;
-        background-color: #F6F6F6;
-        border: 1px solid #C2C2C2;
     }
 
     .sign_button {

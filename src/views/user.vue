@@ -65,7 +65,7 @@
                 </div>
                 <div class="right_top_detail" v-show="show_box">
                     <div class="top">
-                        <div class="top_name">智橙</div>
+                        <div class="top_name">{{companyName}}</div>
                         <div class="status">工作状态：正常</div>
                     </div>
                     <div class="down">
@@ -82,11 +82,12 @@
 </template>
 
 <script>
-    import axios from 'axios';
+
     import {
         mapState,
         mapMutations,
     } from 'vuex'
+    import md5 from 'js-md5'
 
     export default {
         name: "Menu",
@@ -129,6 +130,7 @@
                         {required: true, message: '请再次输入新密码', validator: validatePass2, trigger: 'blur'}
                     ]
                 },
+                companyName:'',//公司名称
             }
         },
         methods: {
@@ -144,22 +146,19 @@
                 //修改密码
                 this.$refs[formName].validate((valid) => {
                     if (valid) {
-                        let data = this.$qs.stringify({
-                            "password": this.PasswordForm.pass,
-                        });
-                        this.$post("/api/v1/users/reset_pwd/", data)
+                        let oldPass = md5(this.PasswordForm.old + 'ashley');
+                        let newPass = md5(this.PasswordForm.pass + 'ashley');
+
+                        this.$post("/emp/changeP", {
+                            "oldpassword": md5(oldPass + 'ashley'),
+                            "newpassword": md5(newPass + 'ashley'),
+                        })
                             .then((res) => {
-                                this.resetForm('PasswordForm');
-                                this.$message({
-                                    message: "修改密码成功！",
-                                    type: 'success'
-                                })
+                                this.closeDetail();
+                                this.$success("修改密码成功");
                             })
                             .catch((err) => {
-                                this.$message({
-                                    message: "修改密码失败！",
-                                    type: 'error'
-                                })
+                                this.$fail("修改密码失败")
                             });
                     }
                 })
@@ -186,12 +185,11 @@
         },
         computed: {
             ...mapState({
-                token: state => state.token,
                 role: state => state.role,
             })
         },
         mounted() {
-
+            this.companyName = this.role;
         },
     }
 </script>
@@ -287,6 +285,7 @@
         top: 70px;
         right: 40px;
         box-shadow: #D4D7D9 0 1px 10px;
+        z-index: 100;
     }
 
     .right_top_detail .top {

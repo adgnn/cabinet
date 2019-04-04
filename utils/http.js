@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 // axios.defaults.timeout = 5000;
-axios.defaults.baseURL = 'http://192.168.0.142:8082';
+axios.defaults.baseURL = 'http://192.168.0.142:8081';
 
 //封装get方法
 export function get(url, params = {}) {

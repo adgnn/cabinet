@@ -88,6 +88,8 @@
 </template>
 
 <script>
+    import qs from 'qs'
+
     export default {
         name: "userSet",
         data() {
@@ -192,12 +194,19 @@
                         this.$message("请选择用户组");
                         return
                     }
+                    let data = qs.stringify(
+
+                    );
                     this.$refs[formName].validate((valid) => {
                         if (valid) {
                             this.$post('/sys/addU', {
-                                "sysUserId": this.edit.user_id,
-                                "sysUserPhone": this.edit.phone,
-                                "sysUserName": this.edit.name,
+                                "user": {
+                                    "sysGroup": {
+                                        "sysGroupId": this.edit.user_id,
+                                    },
+                                    "sysUserPhone": this.edit.phone,
+                                    "sysUserName": this.edit.name,
+                                },
                                 "sysUserPassword": this.edit.pass
                             })
                                 .then((res) => {
